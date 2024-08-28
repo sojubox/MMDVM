@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2015,2016,2017 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2015,2016,2017,2020 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -16,10 +16,13 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "Config.h"
+
+#if defined(MODE_YSF)
+
 #if !defined(YSFRX_H)
 #define  YSFRX_H
 
-#include "Config.h"
 #include "YSFDefines.h"
 
 enum YSFRX_STATE {
@@ -43,9 +46,9 @@ private:
   uint16_t    m_dataPtr;
   uint16_t    m_startPtr;
   uint16_t    m_endPtr;
+  uint16_t    m_syncPtr;
   uint16_t    m_minSyncPtr;
   uint16_t    m_maxSyncPtr;
-  uint16_t    m_syncPtr;
   q31_t       m_maxCorr;
   uint16_t    m_lostCount;
   uint8_t     m_countdown;
@@ -64,6 +67,8 @@ private:
   void samplesToBits(uint16_t start, uint16_t count, uint8_t* buffer, uint16_t offset, q15_t centre, q15_t threshold);
   void writeRSSIData(uint8_t* data);
 };
+
+#endif
 
 #endif
 

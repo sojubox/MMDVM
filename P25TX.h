@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2016,2017 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2016,2017,2020 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -16,18 +16,20 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "Config.h"
+
+#if defined(MODE_P25)
+
 #if !defined(P25TX_H)
 #define  P25TX_H
 
-#include "Config.h"
-
-#include "SerialRB.h"
+#include "RingBuffer.h"
 
 class CP25TX {
 public:
   CP25TX();
 
-  uint8_t writeData(const uint8_t* data, uint8_t length);
+  uint8_t writeData(const uint8_t* data, uint16_t length);
 
   void process();
 
@@ -35,19 +37,26 @@ public:
 
   uint8_t getSpace() const;
 
+  void setParams(uint8_t txHang);
+
 private:
-  CSerialRB                        m_buffer;
+  CRingBuffer<uint8_t>                        m_buffer;
   arm_fir_interpolate_instance_q15 m_modFilter;
   arm_fir_instance_q15             m_lpFilter;
   q15_t                            m_modState[16U];    // blockSize + phaseLength - 1, 4 + 9 - 1 plus some spare
-  q15_t                            m_lpState[70U];     // NoTaps + BlockSize - 1, 44 + 20 - 1 plus some spare
+  q15_t                            m_lpState[60U];     // NoTaps + BlockSize - 1, 32 + 20 - 1 plus some spare
   uint8_t                          m_poBuffer[1200U];
   uint16_t                         m_poLen;
   uint16_t                         m_poPtr;
   uint16_t                         m_txDelay;
+  uint32_t                         m_txHang;
+  uint32_t                         m_txCount;
 
   void writeByte(uint8_t c);
+  void writeSilence();
 };
+
+#endif
 
 #endif
 

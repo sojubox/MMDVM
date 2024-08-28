@@ -1,7 +1,8 @@
 /*
  *   Copyright (C) 2016 by Jim McLaughlin KI6ZUM
- *   Copyright (C) 2016, 2017 by Andy Uribe CA6JAU
- *   Copyright (C) 2017 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2016,2017,2018 by Andy Uribe CA6JAU
+ *   Copyright (C) 2017,2018,2020 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2019,2020 by BG5HHP
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,320 +23,9 @@
 #include "Globals.h"
 #include "IO.h"
 
-#if defined(STM32F4XX) || defined(STM32F4)
+#if defined(STM32F4XX) || defined(STM32F7XX)
+#include "IOPins.h"
 
-#if defined(STM32F4_DISCOVERY)
-/*
-Pin definitions for STM32F4 Discovery Board:
-
-PTT      PB13   output           P1 Pin37
-COSLED   PA7    output           P1 Pin17
-LED      PD15   output           P1 Pin47
-COS      PA5    input            P1 Pin15
-
-DSTAR    PD12   output           P1 Pin44
-DMR      PD13   output           P1 Pin45
-YSF      PD14   output           P1 Pin46
-P25      PD11   output           P1 Pin43
-
-RX       PA0    analog input     P1 Pin12
-RSSI     PA1    analog input     P1 Pin11
-TX       PA4    analog output    P1 Pin16
-
-EXT_CLK  PA15   input            P2 Pin40
-*/
-
-#define PIN_COS           GPIO_Pin_5
-#define PORT_COS          GPIOA
-#define RCC_Per_COS       RCC_AHB1Periph_GPIOA
-
-#define PIN_PTT           GPIO_Pin_13
-#define PORT_PTT          GPIOB
-#define RCC_Per_PTT       RCC_AHB1Periph_GPIOB
-
-#define PIN_COSLED        GPIO_Pin_7
-#define PORT_COSLED       GPIOA
-#define RCC_Per_COSLED    RCC_AHB1Periph_GPIOA
-
-#define PIN_LED           GPIO_Pin_15
-#define PORT_LED          GPIOD
-#define RCC_Per_LED       RCC_AHB1Periph_GPIOD
-
-#define PIN_P25           GPIO_Pin_11
-#define PORT_P25          GPIOD
-#define RCC_Per_P25       RCC_AHB1Periph_GPIOD
-
-#define PIN_DSTAR         GPIO_Pin_12
-#define PORT_DSTAR        GPIOD
-#define RCC_Per_DSTAR     RCC_AHB1Periph_GPIOD
-
-#define PIN_DMR           GPIO_Pin_13
-#define PORT_DMR          GPIOD
-#define RCC_Per_DMR       RCC_AHB1Periph_GPIOD
-
-#define PIN_YSF           GPIO_Pin_14
-#define PORT_YSF          GPIOD
-#define RCC_Per_YSF       RCC_AHB1Periph_GPIOD
-
-#define PIN_EXT_CLK       GPIO_Pin_15
-#define SRC_EXT_CLK       GPIO_PinSource15
-#define PORT_EXT_CLK      GPIOA
-
-#define PIN_RX            GPIO_Pin_0
-#define PIN_RX_CH         ADC_Channel_0
-#define PORT_RX           GPIOA
-#define RCC_Per_RX        RCC_AHB1Periph_GPIOA
-
-#define PIN_RSSI          GPIO_Pin_1
-#define PIN_RSSI_CH       ADC_Channel_1
-#define PORT_RSSI         GPIOA
-#define RCC_Per_RSSI      RCC_AHB1Periph_GPIOA
-
-#define PIN_TX            GPIO_Pin_4
-#define PIN_TX_CH         DAC_Channel_1
-
-#elif defined(STM32F4_PI)
-/*
-Pin definitions for STM32F4 Pi Board:
-
-PTT      PB13   output
-COSLED   PB14   output
-LED      PB15   output
-COS      PC0    input
-
-DSTAR    PC7    output
-DMR      PC8    output
-YSF      PA8    output
-P25      PC9    output
-
-RX       PA0    analog input
-RSSI     PA7    analog input
-TX       PA4    analog output
-
-EXT_CLK  PA15   input
-*/
-
-#define PIN_COS           GPIO_Pin_0
-#define PORT_COS          GPIOC
-#define RCC_Per_COS       RCC_AHB1Periph_GPIOC
-
-#define PIN_PTT           GPIO_Pin_13
-#define PORT_PTT          GPIOB
-#define RCC_Per_PTT       RCC_AHB1Periph_GPIOB
-
-#define PIN_COSLED        GPIO_Pin_14
-#define PORT_COSLED       GPIOB
-#define RCC_Per_COSLED    RCC_AHB1Periph_GPIOB
-
-#define PIN_LED           GPIO_Pin_15
-#define PORT_LED          GPIOB
-#define RCC_Per_LED       RCC_AHB1Periph_GPIOB
-
-#define PIN_P25           GPIO_Pin_9
-#define PORT_P25          GPIOC
-#define RCC_Per_P25       RCC_AHB1Periph_GPIOC
-
-#define PIN_DSTAR         GPIO_Pin_7
-#define PORT_DSTAR        GPIOC
-#define RCC_Per_DSTAR     RCC_AHB1Periph_GPIOC
-
-#define PIN_DMR           GPIO_Pin_8
-#define PORT_DMR          GPIOC
-#define RCC_Per_DMR       RCC_AHB1Periph_GPIOC
-
-#define PIN_YSF           GPIO_Pin_8
-#define PORT_YSF          GPIOA
-#define RCC_Per_YSF       RCC_AHB1Periph_GPIOA
-
-#define PIN_EXT_CLK       GPIO_Pin_15
-#define SRC_EXT_CLK       GPIO_PinSource15
-#define PORT_EXT_CLK      GPIOA
-
-#define PIN_RX            GPIO_Pin_0
-#define PIN_RX_CH         ADC_Channel_0
-#define PORT_RX           GPIOA
-#define RCC_Per_RX        RCC_AHB1Periph_GPIOA
-
-#define PIN_RSSI          GPIO_Pin_7
-#define PIN_RSSI_CH       ADC_Channel_7
-#define PORT_RSSI         GPIOA
-#define RCC_Per_RSSI      RCC_AHB1Periph_GPIOA
-
-#define PIN_TX            GPIO_Pin_4
-#define PIN_TX_CH         DAC_Channel_1
-
-#elif defined(STM32F4_NUCLEO)
-
-#if defined(STM32F4_NUCLEO_MORPHO_HEADER)
-/*
-Pin definitions for STM32F4 Nucleo boards (ST Morpho header):
-
-PTT      PB13   output           CN10 Pin30
-COSLED   PB14   output           CN10 Pin28
-LED      PA5    output           CN10 Pin11
-COS      PB15   input            CN10 Pin26
-
-DSTAR    PB10   output           CN10 Pin25
-DMR      PB4    output           CN10 Pin27
-YSF      PB5    output           CN10 Pin29
-P25      PB3    output           CN10 Pin
-
-MDSTAR   PC4    output           CN7 Pin34
-MDMR     PC5    output           CN7 Pin6
-MYSF     PC2    output           CN7 Pin35
-MP25     PC3    output           CN7 Pin37
-
-RX       PA0    analog input     CN7 Pin28
-RSSI     PA1    analog input     CN7 Pin30
-TX       PA4    analog output    CN7 Pin32
-
-EXT_CLK  PA15   input            CN7 Pin18
-*/
-
-#define PIN_COS           GPIO_Pin_15
-#define PORT_COS          GPIOB
-#define RCC_Per_COS       RCC_AHB1Periph_GPIOB
-
-#define PIN_PTT           GPIO_Pin_13
-#define PORT_PTT          GPIOB
-#define RCC_Per_PTT       RCC_AHB1Periph_GPIOB
-
-#define PIN_COSLED        GPIO_Pin_14
-#define PORT_COSLED       GPIOB
-#define RCC_Per_COSLED    RCC_AHB1Periph_GPIOB
-
-#define PIN_LED           GPIO_Pin_5
-#define PORT_LED          GPIOA
-#define RCC_Per_LED       RCC_AHB1Periph_GPIOA
-
-#define PIN_P25           GPIO_Pin_3
-#define PORT_P25          GPIOB
-#define RCC_Per_P25       RCC_AHB1Periph_GPIOB
-
-#define PIN_DSTAR         GPIO_Pin_10
-#define PORT_DSTAR        GPIOB
-#define RCC_Per_DSTAR     RCC_AHB1Periph_GPIOB
-
-#define PIN_DMR           GPIO_Pin_4
-#define PORT_DMR          GPIOB
-#define RCC_Per_DMR       RCC_AHB1Periph_GPIOB
-
-#define PIN_YSF           GPIO_Pin_5
-#define PORT_YSF          GPIOB
-#define RCC_Per_YSF       RCC_AHB1Periph_GPIOB
-
-#if defined(STM32F4_NUCLEO_MODE_PINS)
-#define PIN_MP25          GPIO_Pin_3
-#define PORT_MP25         GPIOC
-#define RCC_Per_MP25      RCC_AHB1Periph_GPIOC
-
-#define PIN_MDSTAR        GPIO_Pin_4
-#define PORT_MDSTAR       GPIOC
-#define RCC_Per_MDSTAR    RCC_AHB1Periph_GPIOC
-
-#define PIN_MDMR          GPIO_Pin_5
-#define PORT_MDMR         GPIOC
-#define RCC_Per_MDMR      RCC_AHB1Periph_GPIOC
-
-#define PIN_MYSF          GPIO_Pin_2
-#define PORT_MYSF         GPIOC
-#define RCC_Per_MYSF      RCC_AHB1Periph_GPIOC
-#endif
-
-#define PIN_EXT_CLK       GPIO_Pin_15
-#define SRC_EXT_CLK       GPIO_PinSource15
-#define PORT_EXT_CLK      GPIOA
-
-#define PIN_RX            GPIO_Pin_0
-#define PIN_RX_CH         ADC_Channel_0
-#define PORT_RX           GPIOA
-#define RCC_Per_RX        RCC_AHB1Periph_GPIOA
-
-#define PIN_RSSI          GPIO_Pin_1
-#define PIN_RSSI_CH       ADC_Channel_1
-#define PORT_RSSI         GPIOA
-#define RCC_Per_RSSI      RCC_AHB1Periph_GPIOA
-
-#define PIN_TX            GPIO_Pin_4
-#define PIN_TX_CH         DAC_Channel_1
-
-#elif defined(STM32F4_NUCLEO_ARDUINO_HEADER)
-/*
-Pin definitions for STM32F4 Nucleo boards (Arduino header):
-
-PTT      PB10   output           CN9 Pin7
-COSLED   PB3    output           CN9 Pin4
-LED      PB5    output           CN9 Pin5
-COS      PB4    input            CN9 Pin6
-
-DSTAR    PA1    output           CN8 Pin2
-DMR      PA4    output           CN8 Pin3
-YSF      PB0    output           CN8 Pin4
-P25      PC1    output           CN8 Pin5
-
-RX       PA0    analog input     CN8 Pin1
-RSSI     PC0    analog input     CN8 Pin6
-TX       PA5    analog output    CN5 Pin6
-
-EXT_CLK  PB8    input            CN5 Pin10
-*/
-
-#define PIN_COS           GPIO_Pin_4
-#define PORT_COS          GPIOB
-#define RCC_Per_COS       RCC_AHB1Periph_GPIOB
-
-#define PIN_PTT           GPIO_Pin_10
-#define PORT_PTT          GPIOB
-#define RCC_Per_PTT       RCC_AHB1Periph_GPIOB
-
-#define PIN_COSLED        GPIO_Pin_3
-#define PORT_COSLED       GPIOB
-#define RCC_Per_COSLED    RCC_AHB1Periph_GPIOB
-
-#define PIN_LED           GPIO_Pin_5
-#define PORT_LED          GPIOB
-#define RCC_Per_LED       RCC_AHB1Periph_GPIOB
-
-#define PIN_P25           GPIO_Pin_1
-#define PORT_P25          GPIOC
-#define RCC_Per_P25       RCC_AHB1Periph_GPIOC
-
-#define PIN_DSTAR         GPIO_Pin_1
-#define PORT_DSTAR        GPIOA
-#define RCC_Per_DSTAR     RCC_AHB1Periph_GPIOA
-
-#define PIN_DMR           GPIO_Pin_4
-#define PORT_DMR          GPIOA
-#define RCC_Per_DMR       RCC_AHB1Periph_GPIOA
-
-#define PIN_YSF           GPIO_Pin_0
-#define PORT_YSF          GPIOB
-#define RCC_Per_YSF       RCC_AHB1Periph_GPIOB
-
-#define PIN_EXT_CLK       GPIO_Pin_8
-#define SRC_EXT_CLK       GPIO_PinSource8
-#define PORT_EXT_CLK      GPIOB
-
-#define PIN_RX            GPIO_Pin_0
-#define PIN_RX_CH         ADC_Channel_0
-#define PORT_RX           GPIOA
-#define RCC_Per_RX        RCC_AHB1Periph_GPIOA
-
-#define PIN_RSSI          GPIO_Pin_0
-#define PIN_RSSI_CH       ADC_Channel_10
-#define PORT_RSSI         GPIOC
-#define RCC_Per_RSSI      RCC_AHB1Periph_GPIOC
-
-#define PIN_TX            GPIO_Pin_5
-#define PIN_TX_CH         DAC_Channel_2
-
-#else
-#error "Either STM32F4_NUCLEO_MORPHO_HEADER or STM32F4_NUCLEO_ARDUINO_HEADER need to be defined in Config.h"
-#endif
-
-#else
-#error "Either STM32F4_DISCOVERY, STM32F4_PI or STM32F4_NUCLEO need to be defined"
-#endif
 
 const uint16_t DC_OFFSET = 2048U;
 
@@ -383,7 +73,7 @@ void CIO::initInt()
    GPIO_InitStruct.GPIO_Mode  = GPIO_Mode_IN;
    GPIO_Init(PORT_COS, &GPIO_InitStruct);
 
-#if defined(ARDUINO_MODE_PINS)
+#if defined(MODE_LEDS)
    // DSTAR pin
    RCC_AHB1PeriphClockCmd(RCC_Per_DSTAR, ENABLE);
    GPIO_InitStruct.GPIO_Pin   = PIN_DSTAR;
@@ -407,9 +97,42 @@ void CIO::initInt()
    GPIO_InitStruct.GPIO_Pin   = PIN_P25;
    GPIO_InitStruct.GPIO_Mode  = GPIO_Mode_OUT;
    GPIO_Init(PORT_P25, &GPIO_InitStruct);
+
+#if !defined(USE_ALTERNATE_NXDN_LEDS)
+   // NXDN pin
+   RCC_AHB1PeriphClockCmd(RCC_Per_NXDN, ENABLE);
+   GPIO_InitStruct.GPIO_Pin   = PIN_NXDN;
+   GPIO_InitStruct.GPIO_Mode  = GPIO_Mode_OUT;
+   GPIO_Init(PORT_NXDN, &GPIO_InitStruct);
 #endif
 
-#if defined(STM32F4_NUCLEO_MODE_PINS) && defined(STM32F4_NUCLEO_MORPHO_HEADER) && defined(STM32F4_NUCLEO)
+#if !defined(USE_ALTERNATE_M17_LEDS)
+   // M17 pin
+   RCC_AHB1PeriphClockCmd(RCC_Per_M17, ENABLE);
+   GPIO_InitStruct.GPIO_Pin   = PIN_M17;
+   GPIO_InitStruct.GPIO_Mode  = GPIO_Mode_OUT;
+   GPIO_Init(PORT_M17, &GPIO_InitStruct);
+#endif
+
+#if !defined(USE_ALTERNATE_POCSAG_LEDS)
+   // POCSAG pin
+   RCC_AHB1PeriphClockCmd(RCC_Per_POCSAG, ENABLE);
+   GPIO_InitStruct.GPIO_Pin   = PIN_POCSAG;
+   GPIO_InitStruct.GPIO_Mode  = GPIO_Mode_OUT;
+   GPIO_Init(PORT_POCSAG, &GPIO_InitStruct);
+#endif
+
+#if !defined(USE_ALTERNATE_FM_LEDS)
+   // FM pin
+   RCC_AHB1PeriphClockCmd(RCC_Per_FM, ENABLE);
+   GPIO_InitStruct.GPIO_Pin   = PIN_FM;
+   GPIO_InitStruct.GPIO_Mode  = GPIO_Mode_OUT;
+   GPIO_Init(PORT_FM, &GPIO_InitStruct);
+#endif
+
+#endif
+
+#if defined(MODE_PINS) && defined(STM32F4_NUCLEO_MORPHO_HEADER) && (defined(STM32F4_NUCLEO) || defined(STM32F722_RPT_HAT))
    // DSTAR mode pin
    RCC_AHB1PeriphClockCmd(RCC_Per_MDSTAR, ENABLE);
    GPIO_InitStruct.GPIO_Pin   = PIN_MDSTAR;
@@ -433,6 +156,39 @@ void CIO::initInt()
    GPIO_InitStruct.GPIO_Pin   = PIN_MP25;
    GPIO_InitStruct.GPIO_Mode  = GPIO_Mode_OUT;
    GPIO_Init(PORT_MP25, &GPIO_InitStruct);
+
+#if !defined(USE_ALTERNATE_NXDN_LEDS)
+   // NXDN mode pin
+   RCC_AHB1PeriphClockCmd(RCC_Per_MNXDN, ENABLE);
+   GPIO_InitStruct.GPIO_Pin   = PIN_MNXDN;
+   GPIO_InitStruct.GPIO_Mode  = GPIO_Mode_OUT;
+   GPIO_Init(PORT_MNXDN, &GPIO_InitStruct);
+#endif
+
+#if !defined(USE_ALTERNATE_M17_LEDS)
+   // M17 mode pin
+   RCC_AHB1PeriphClockCmd(RCC_Per_MM17, ENABLE);
+   GPIO_InitStruct.GPIO_Pin   = PIN_MM17;
+   GPIO_InitStruct.GPIO_Mode  = GPIO_Mode_OUT;
+   GPIO_Init(PORT_MM17, &GPIO_InitStruct);
+#endif
+
+#if !defined(USE_ALTERNATE_POCSAG_LEDS)
+   // POCSAG mode pin
+   RCC_AHB1PeriphClockCmd(RCC_Per_MPOCSAG, ENABLE);
+   GPIO_InitStruct.GPIO_Pin   = PIN_MPOCSAG;
+   GPIO_InitStruct.GPIO_Mode  = GPIO_Mode_OUT;
+   GPIO_Init(PORT_MPOCSAG, &GPIO_InitStruct);
+#endif
+
+#if !defined(USE_ALTERNATE_FM_LEDS)
+   // FM mode pin
+   RCC_AHB1PeriphClockCmd(RCC_Per_MFM, ENABLE);
+   GPIO_InitStruct.GPIO_Pin   = PIN_MFM;
+   GPIO_InitStruct.GPIO_Mode  = GPIO_Mode_OUT;
+   GPIO_Init(PORT_MFM, &GPIO_InitStruct);
+#endif
+
 #endif
 }
 
@@ -535,7 +291,7 @@ void CIO::startInt()
    // Init the timer
    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
-#if defined(EXTERNAL_OSC)
+#if defined(EXTERNAL_OSC) && !(defined(STM32F4_PI) || defined(STM32F722_PI))
    // Configure a GPIO as external TIM2 clock source
    GPIO_PinAFConfig(PORT_EXT_CLK, SRC_EXT_CLK, GPIO_AF_TIM2);
    GPIO_InitStruct.GPIO_Pin = PIN_EXT_CLK;
@@ -547,19 +303,20 @@ void CIO::startInt()
    TIM_TimeBaseStructInit (&timerInitStructure);
 
    // TIM2 output frequency
-#if defined(EXTERNAL_OSC)
+#if defined(EXTERNAL_OSC) && !(defined(STM32F4_PI) || defined(STM32F722_PI))
    timerInitStructure.TIM_Prescaler = (uint16_t) ((EXTERNAL_OSC/(2*SAMP_FREQ)) - 1);
+   timerInitStructure.TIM_Period = 1;
 #else
-   timerInitStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock/(4*SAMP_FREQ)) - 1);
+   timerInitStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock/(6*SAMP_FREQ)) - 1);
+   timerInitStructure.TIM_Period = 2;
 #endif
 
    timerInitStructure.TIM_CounterMode       = TIM_CounterMode_Up;
-   timerInitStructure.TIM_Period            = 1;
    timerInitStructure.TIM_ClockDivision     = TIM_CKD_DIV1;
    timerInitStructure.TIM_RepetitionCounter = 0;
    TIM_TimeBaseInit(TIM2, &timerInitStructure);
 
-#if defined(EXTERNAL_OSC)
+#if defined(EXTERNAL_OSC) && !(defined(STM32F4_PI) || defined(STM32F722_PI))
    // Enable external clock
    TIM_ETRClockMode2Config(TIM2, TIM_ExtTRGPSC_OFF, TIM_ExtTRGPolarity_NonInverted, 0x00);
 #else
@@ -585,25 +342,24 @@ void CIO::startInt()
 
 void CIO::interrupt()
 {
-   uint8_t control  = MARK_NONE;
-   uint16_t sample  = DC_OFFSET;
+   TSample sample = {DC_OFFSET, MARK_NONE};
    uint16_t rawRSSI = 0U;
 
-   m_txBuffer.get(sample, control);
+   m_txBuffer.get(sample);
 
    // Send the value to the DAC
 #if defined(STM32F4_NUCLEO) && defined(STM32F4_NUCLEO_ARDUINO_HEADER)
-   DAC_SetChannel2Data(DAC_Align_12b_R, sample);
+   DAC_SetChannel2Data(DAC_Align_12b_R, sample.sample);
 #else
-   DAC_SetChannel1Data(DAC_Align_12b_R, sample);
+   DAC_SetChannel1Data(DAC_Align_12b_R, sample.sample);
 #endif
 
    // Read value from ADC1 and ADC2
    if ((ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == RESET)) {
       // shouldn't be still in reset at this point so null the sample value?
-      sample  = 0U;
+      sample.sample  = 0U;
    } else {
-      sample  = ADC_GetConversionValue(ADC1);
+      sample.sample  = ADC_GetConversionValue(ADC1);
 #if defined(SEND_RSSI_DATA)
       rawRSSI = ADC_GetConversionValue(ADC2);
 #endif
@@ -613,7 +369,7 @@ void CIO::interrupt()
    ADC_ClearFlag(ADC1, ADC_FLAG_EOC);
    ADC_SoftwareStartConv(ADC1);
 
-   m_rxBuffer.put(sample, control);
+   m_rxBuffer.put(sample);
    m_rssiBuffer.put(rawRSSI);
 
    m_watchdog++;
@@ -621,7 +377,7 @@ void CIO::interrupt()
 
 bool CIO::getCOSInt()
 {
-   return GPIO_ReadOutputDataBit(PORT_COS, PIN_COS) == Bit_SET;
+   return GPIO_ReadInputDataBit(PORT_COS, PIN_COS) == Bit_SET;
 }
 
 void CIO::setLEDInt(bool on)
@@ -641,34 +397,169 @@ void CIO::setCOSInt(bool on)
 
 void CIO::setDStarInt(bool on)
 {
+#if defined(MODE_LEDS)
    GPIO_WriteBit(PORT_DSTAR, PIN_DSTAR, on ? Bit_SET : Bit_RESET);
-#if defined(STM32F4_NUCLEO_MODE_PINS) && defined(STM32F4_NUCLEO_MORPHO_HEADER) && defined(STM32F4_NUCLEO)
+#endif
+#if defined(MODE_PINS) && defined(STM32F4_NUCLEO_MORPHO_HEADER) && (defined(STM32F4_NUCLEO) || defined(STM32F722_RPT_HAT))
    GPIO_WriteBit(PORT_MDSTAR, PIN_MDSTAR, on ? Bit_SET : Bit_RESET);
 #endif
 }
 
 void CIO::setDMRInt(bool on)
 {
+#if defined(MODE_LEDS)
    GPIO_WriteBit(PORT_DMR, PIN_DMR, on ? Bit_SET : Bit_RESET);
-#if defined(STM32F4_NUCLEO_MODE_PINS) && defined(STM32F4_NUCLEO_MORPHO_HEADER) && defined(STM32F4_NUCLEO)
+#endif
+#if defined(MODE_PINS) && defined(STM32F4_NUCLEO_MORPHO_HEADER) && (defined(STM32F4_NUCLEO) || defined(STM32F722_RPT_HAT))
    GPIO_WriteBit(PORT_MDMR, PIN_MDMR, on ? Bit_SET : Bit_RESET);
 #endif
 }
 
 void CIO::setYSFInt(bool on)
 {
+#if defined(MODE_LEDS)
    GPIO_WriteBit(PORT_YSF, PIN_YSF, on ? Bit_SET : Bit_RESET);
-#if defined(STM32F4_NUCLEO_MODE_PINS) && defined(STM32F4_NUCLEO_MORPHO_HEADER) && defined(STM32F4_NUCLEO)
+#endif
+#if defined(MODE_PINS) && defined(STM32F4_NUCLEO_MORPHO_HEADER) && (defined(STM32F4_NUCLEO) || defined(STM32F722_RPT_HAT))
    GPIO_WriteBit(PORT_MYSF, PIN_MYSF, on ? Bit_SET : Bit_RESET);
 #endif
 }
 
 void CIO::setP25Int(bool on)
 {
+#if defined(MODE_LEDS)
    GPIO_WriteBit(PORT_P25, PIN_P25, on ? Bit_SET : Bit_RESET);
-#if defined(STM32F4_NUCLEO_MODE_PINS) && defined(STM32F4_NUCLEO_MORPHO_HEADER) && defined(STM32F4_NUCLEO)
+#endif
+#if defined(MODE_PINS) && defined(STM32F4_NUCLEO_MORPHO_HEADER) && (defined(STM32F4_NUCLEO) || defined(STM32F722_RPT_HAT))
    GPIO_WriteBit(PORT_MP25, PIN_MP25, on ? Bit_SET : Bit_RESET);
 #endif
 }
 
+void CIO::setNXDNInt(bool on)
+{
+#if defined(MODE_LEDS)
+#if defined(USE_ALTERNATE_NXDN_LEDS)
+   GPIO_WriteBit(PORT_YSF, PIN_YSF, on ? Bit_SET : Bit_RESET);
+   GPIO_WriteBit(PORT_P25, PIN_P25, on ? Bit_SET : Bit_RESET);
+#else
+   GPIO_WriteBit(PORT_NXDN, PIN_NXDN, on ? Bit_SET : Bit_RESET);
 #endif
+#endif
+
+#if defined(MODE_PINS) && defined(STM32F4_NUCLEO_MORPHO_HEADER) && (defined(STM32F4_NUCLEO) || defined(STM32F722_RPT_HAT))
+#if defined(USE_ALTERNATE_NXDN_LEDS)
+   GPIO_WriteBit(PORT_MYSF, PIN_MYSF, on ? Bit_SET : Bit_RESET);
+   GPIO_WriteBit(PORT_MP25, PIN_MP25, on ? Bit_SET : Bit_RESET);
+#else
+   GPIO_WriteBit(PORT_MNXDN, PIN_MNXDN, on ? Bit_SET : Bit_RESET);
+#endif
+#endif
+}
+
+void CIO::setM17Int(bool on)
+{
+#if defined(MODE_LEDS)
+#if defined(USE_ALTERNATE_M17_LEDS)
+   GPIO_WriteBit(PORT_DSTAR, PIN_DSTAR, on ? Bit_SET : Bit_RESET);
+   GPIO_WriteBit(PORT_P25,   PIN_P25, on ? Bit_SET : Bit_RESET);
+#else
+   GPIO_WriteBit(PORT_M17, PIN_M17, on ? Bit_SET : Bit_RESET);
+#endif
+#endif
+
+#if defined(MODE_PINS) && defined(STM32F4_NUCLEO_MORPHO_HEADER) && (defined(STM32F4_NUCLEO) || defined(STM32F722_RPT_HAT))
+#if defined(USE_ALTERNATE_M17_LEDS)
+   GPIO_WriteBit(PORT_MDSTAR, PIN_MDSTAR, on ? Bit_SET : Bit_RESET);
+   GPIO_WriteBit(PORT_MP25,   PIN_MP25,   on ? Bit_SET : Bit_RESET);
+#else
+   GPIO_WriteBit(PORT_MM17, PIN_MM17, on ? Bit_SET : Bit_RESET);
+#endif
+#endif
+}
+
+void CIO::setPOCSAGInt(bool on)
+{
+#if defined(MODE_LEDS)
+#if defined(USE_ALTERNATE_POCSAG_LEDS)
+   GPIO_WriteBit(PORT_DSTAR, PIN_DSTAR, on ? Bit_SET : Bit_RESET);
+   GPIO_WriteBit(PORT_DMR,   PIN_DMR,   on ? Bit_SET : Bit_RESET);
+#else
+   GPIO_WriteBit(PORT_POCSAG,  PIN_POCSAG, on ? Bit_SET : Bit_RESET);
+#endif
+#endif
+
+#if defined(MODE_PINS) && defined(STM32F4_NUCLEO_MORPHO_HEADER) && (defined(STM32F4_NUCLEO) || defined(STM32F722_RPT_HAT))
+#if defined(USE_ALTERNATE_POCSAG_LEDS)
+   GPIO_WriteBit(PORT_MDSTAR, PIN_MDSTAR, on ? Bit_SET : Bit_RESET);
+   GPIO_WriteBit(PORT_MDMR,   PIN_MDMR,   on ? Bit_SET : Bit_RESET);
+#else
+   GPIO_WriteBit(PORT_MPOCSAG, PIN_MPOCSAG, on ? Bit_SET : Bit_RESET);
+#endif
+#endif
+}
+
+void CIO::setFMInt(bool on)
+{
+#if defined(MODE_LEDS)
+#if defined(USE_ALTERNATE_FM_LEDS)
+   GPIO_WriteBit(PORT_DSTAR, PIN_DSTAR, on ? Bit_SET : Bit_RESET);
+   GPIO_WriteBit(PORT_YSF,   PIN_YSF,   on ? Bit_SET : Bit_RESET);
+#else
+   GPIO_WriteBit(PORT_FM,  PIN_FM, on ? Bit_SET : Bit_RESET);
+#endif
+#endif
+
+#if defined(MODE_PINS) && defined(STM32F4_NUCLEO_MORPHO_HEADER) && (defined(STM32F4_NUCLEO) || defined(STM32F722_RPT_HAT))
+#if defined(USE_ALTERNATE_FM_LEDS)
+   GPIO_WriteBit(PORT_MDSTAR, PIN_MDSTAR, on ? Bit_SET : Bit_RESET);
+   GPIO_WriteBit(PORT_MYSF,   PIN_MYSF,   on ? Bit_SET : Bit_RESET);
+#else
+   GPIO_WriteBit(PORT_MFM, PIN_MFM, on ? Bit_SET : Bit_RESET);
+#endif
+#endif
+}
+
+// Simple delay function for STM32
+// Example from: http://thehackerworkshop.com/?p=1209
+void CIO::delayInt(unsigned int dly)
+{
+#if defined(STM32F7XX)
+  unsigned int loopsPerMillisecond = (SystemCoreClock/1000);
+#else
+  unsigned int loopsPerMillisecond = (SystemCoreClock/1000) / 3;
+#endif
+
+  for (; dly > 0; dly--)
+  {
+    asm volatile //this routine waits (approximately) one millisecond
+    (
+      "mov r3, %[loopsPerMillisecond] \n\t" //load the initial loop counter
+      "loop: \n\t"
+        "subs r3, #1 \n\t"
+        "bne loop \n\t"
+
+      : //empty output list
+      : [loopsPerMillisecond] "r" (loopsPerMillisecond) //input to the asm routine
+      : "r3", "cc" //clobber list
+    );
+  }
+}
+
+uint8_t CIO::getCPU() const
+{
+  return 2U;
+}
+
+void CIO::getUDID(uint8_t* buffer)
+{
+#if defined(STM32F4XX)
+  ::memcpy(buffer, (void *)0x1FFF7A10, 12U);
+#elif defined(STM32F722xx)
+  ::memcpy(buffer, (void *)0x1FF07A10, 12U);
+#elif defined(STM32F767xx)
+  ::memcpy(buffer, (void *)0x1FF0F420, 12U);
+#endif
+}
+
+#endif
+

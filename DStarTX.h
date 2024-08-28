@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2015,2016,2017 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2015,2016,2017,2020 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -16,19 +16,21 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "Config.h"
+
+#if defined(MODE_DSTAR)
+
 #if !defined(DSTARTX_H)
 #define  DSTARTX_H
 
-#include "Config.h"
-
-#include "SerialRB.h"
+#include "RingBuffer.h"
 
 class CDStarTX {
 public:
   CDStarTX();
 
-  uint8_t writeHeader(const uint8_t* header, uint8_t length);
-  uint8_t writeData(const uint8_t* data, uint8_t length);
+  uint8_t writeHeader(const uint8_t* header, uint16_t length);
+  uint8_t writeData(const uint8_t* data, uint16_t length);
   uint8_t writeEOT();
 
   void process();
@@ -38,7 +40,7 @@ public:
   uint8_t getSpace() const;
 
 private:
-  CSerialRB                        m_buffer;
+  CRingBuffer<uint8_t>             m_buffer;
   arm_fir_interpolate_instance_q15 m_modFilter;
   q15_t                            m_modState[20U];    // blockSize + phaseLength - 1, 8 + 9 - 1 plus some spare
   uint8_t                          m_poBuffer[600U];
@@ -49,6 +51,8 @@ private:
   void txHeader(const uint8_t* in, uint8_t* out) const;
   void writeByte(uint8_t c);
 };
+
+#endif
 
 #endif
 

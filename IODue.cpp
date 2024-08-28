@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2015,2016,2017 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2015,2016,2017,2018,2020 by Jonathan Naylor G4KLX
  *   Copyright (C) 2015 by Jim Mclaughlin KI6ZUM
  *   Copyright (C) 2016 by Colin Durbridge G4EML
  *
@@ -33,6 +33,9 @@
 #define PIN_DMR                17
 #define PIN_YSF                18
 #define PIN_P25                19
+#define PIN_NXDN               20
+#define PIN_POCSAG             4
+#define PIN_FM                 5
 #define ADC_CHER_Chan          (1<<7)                 // ADC on Due pin A0  - Due AD7 - (1 << 7)
 #define ADC_ISR_EOC_Chan       ADC_ISR_EOC7
 #define ADC_CDR_Chan           7
@@ -46,6 +49,9 @@
 #define PIN_DMR                8
 #define PIN_YSF                7
 #define PIN_P25                6
+#define PIN_NXDN               5
+#define PIN_POCSAG             4
+#define PIN_FM                 3
 #define ADC_CHER_Chan          (1<<13)                // ADC on Due pin A11 - Due AD13 - (1 << 13)
 #define ADC_ISR_EOC_Chan       ADC_ISR_EOC13
 #define ADC_CDR_Chan           13
@@ -61,6 +67,9 @@
 #define PIN_DMR                8
 #define PIN_YSF                7
 #define PIN_P25                6
+#define PIN_NXDN               5
+#define PIN_POCSAG             4
+#define PIN_FM                 3
 #define ADC_CHER_Chan          (1<<7)                 // ADC on Due pin A0  - Due AD7 - (1 << 7)
 #define ADC_ISR_EOC_Chan       ADC_ISR_EOC7
 #define ADC_CDR_Chan           7
@@ -89,12 +98,24 @@ void CIO::initInt()
   pinMode(PIN_LED,    OUTPUT);
   pinMode(PIN_COS,    INPUT);
 
-#if defined(ARDUINO_MODE_PINS)
+#if defined(MODE_LEDS)
   // Set up the mode output pins
   pinMode(PIN_DSTAR,  OUTPUT);
   pinMode(PIN_DMR,    OUTPUT);
   pinMode(PIN_YSF,    OUTPUT);
   pinMode(PIN_P25,    OUTPUT);
+#if !defined(USE_ALTERNATE_NXDN_LEDS)
+  pinMode(PIN_NXDN,   OUTPUT);
+#endif
+#if !defined(USE_ALTERNATE_M17_LEDS)
+  pinMode(PIN_M17,    OUTPUT);
+#endif
+#if !defined(USE_ALTERNATE_POCSAG_LEDS)
+  pinMode(PIN_POCSAG, OUTPUT);
+#endif
+#if !defined(USE_ALTERNATE_POCSAG_LEDS)
+  pinMode(PIN_FM,     OUTPUT);
+#endif
 #endif
 }
 
@@ -167,14 +188,13 @@ void CIO::startInt()
 void CIO::interrupt()
 {
   if ((ADC->ADC_ISR & ADC_ISR_EOC_Chan) == ADC_ISR_EOC_Chan) {    // Ensure there was an End-of-Conversion and we read the ISR reg
-    uint8_t control = MARK_NONE;
-    uint16_t sample = DC_OFFSET;
+    TSample sample = {DC_OFFSET, MARK_NONE};
 
-    m_txBuffer.get(sample, control);
-    DACC->DACC_CDR = sample;
+    m_txBuffer.get(sample);
+    DACC->DACC_CDR = sample.sample;
 
-    sample = ADC->ADC_CDR[ADC_CDR_Chan];
-    m_rxBuffer.put(sample, control);
+    sample.sample = ADC->ADC_CDR[ADC_CDR_Chan];
+    m_rxBuffer.put(sample);
 
 #if defined(SEND_RSSI_DATA)
     m_rssiBuffer.put(ADC->ADC_CDR[RSSI_CDR_Chan]);
@@ -226,4 +246,78 @@ void CIO::setP25Int(bool on)
   digitalWrite(PIN_P25, on ? HIGH : LOW);
 }
 
+void CIO::setNXDNInt(bool on)
+{
+#if defined(USE_ALTERNATE_NXDN_LEDS)
+  digitalWrite(PIN_YSF, on ? HIGH : LOW);
+  digitalWrite(PIN_P25, on ? HIGH : LOW);
+#else
+  digitalWrite(PIN_NXDN, on ? HIGH : LOW);
 #endif
+}
+
+void CIO::setM17Int(bool on)
+{
+#if defined(USE_ALTERNATE_M17_LEDS)
+  digitalWrite(PIN_DSTAR, on ? HIGH : LOW);
+  digitalWrite(PIN_P25,   on ? HIGH : LOW);
+#else
+  digitalWrite(PIN_M17, on ? HIGH : LOW);
+#endif
+}
+
+void CIO::setPOCSAGInt(bool on)
+{
+#if defined(USE_ALTERNATE_POCSAG_LEDS)
+  digitalWrite(PIN_DSTAR, on ? HIGH : LOW);
+  digitalWrite(PIN_DMR,   on ? HIGH : LOW);
+#else
+  digitalWrite(PIN_POCSAG, on ? HIGH : LOW);
+#endif
+}
+
+void CIO::setFMInt(bool on)
+{
+#if defined(USE_ALTERNATE_FM_LEDS)
+  digitalWrite(PIN_DSTAR, on ? HIGH : LOW);
+  digitalWrite(PIN_YSF,   on ? HIGH : LOW);
+#else
+  digitalWrite(PIN_FM, on ? HIGH : LOW);
+#endif
+}
+
+void CIO::delayInt(unsigned int dly)
+{
+  delay(dly);
+}
+
+uint8_t CIO::getCPU() const
+{
+  return 0U;
+}
+
+// Code taken from https://github.com/emagii/at91sam3s/blob/master/examples/eefc_uniqueid/main.c
+void CIO::getUDID(uint8_t* buffer)
+{
+  uint32_t status;
+
+  EFC1->EEFC_FCR = (0x5A << 24) | EFC_FCMD_STUI;
+  do {
+    status = EFC1->EEFC_FSR;
+  } while ( (status & EEFC_FSR_FRDY) == EEFC_FSR_FRDY );
+
+  for (uint8_t i = 0; i < 16; i+=4) {
+    buffer[i + 0] = *(uint32_t *)(IFLASH1_ADDR + i) >> 24;
+    buffer[i + 1] = *(uint32_t *)(IFLASH1_ADDR + i) >> 16;
+    buffer[i + 2] = *(uint32_t *)(IFLASH1_ADDR + i) >>  8;
+    buffer[i + 3] = *(uint32_t *)(IFLASH1_ADDR + i) >>  0;
+  }
+
+  EFC1->EEFC_FCR = (0x5A << 24) | EFC_FCMD_SPUI;
+  do {
+    status = EFC1->EEFC_FSR;
+  } while ( (status & EEFC_FSR_FRDY) != EEFC_FSR_FRDY );
+}
+
+#endif
+

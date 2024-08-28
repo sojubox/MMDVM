@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2009-2017 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2009-2017,2020 by Jonathan Naylor G4KLX
  *   Copyright (C) 2016 by Colin Durbridge G4EML
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -77,6 +77,7 @@ const struct {
   {',', 0xEEAEE000U, 22U},
   {'-', 0xEAAE0000U, 18U},
   {'=', 0xEAB80000U, 16U},
+  {'.', 0xBAEB8000U, 20U},
   {' ', 0x00000000U, 4U},
   {0U,  0x00000000U, 0U}
 };
@@ -124,7 +125,7 @@ void CCWIdTX::process()
   }
 }
 
-uint8_t CCWIdTX::write(const uint8_t* data, uint8_t length)
+uint8_t CCWIdTX::write(const uint8_t* data, uint16_t length)
 {
   ::memset(m_poBuffer, 0x00U, 1000U * sizeof(uint8_t));
 
@@ -170,4 +171,3 @@ void CCWIdTX::reset()
   m_poPtr = 0U;
   m_n     = 0U;
 }
-

@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2015,2016,2017 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2015,2016,2017,2018,2020 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -19,6 +19,37 @@
 #if !defined(CONFIG_H)
 #define  CONFIG_H
 
+// Allow for the selection of which modes to compile into the firmware. This is particularly useful for processors
+// which have limited code space and processing power.
+
+// Enable D-Star support.
+#define MODE_DSTAR
+
+// Enable DMR support.
+#define MODE_DMR
+
+// Enable System Fusion support.
+#define MODE_YSF
+
+// Enable P25 phase 1 support.
+#define MODE_P25
+
+// Enable NXDN support, the boxcar filter sometimes improves the performance of NXDN receive on some systems.
+#define MODE_NXDN
+#define USE_NXDN_BOXCAR
+
+// Enable M17 support.
+#define MODE_M17
+
+// Enable POCSAG support.
+#define MODE_POCSAG
+
+// Enable FM support.
+#define MODE_FM
+
+// Enable AX.25 support, this is only enabled if FM is also enabled.
+#define MODE_AX25
+
 // Allow for the use of high quality external clock oscillators
 // The number is the frequency of the oscillator in Hertz.
 //
@@ -35,20 +66,20 @@
 // For 19.2 MHz
 // #define EXTERNAL_OSC 19200000
 
-// Allow the use of the COS line to lockout the modem
-// #define USE_COS_AS_LOCKOUT
+// Select a baud rate for host communication. The faster speeds are needed for external FM to work.
+// #define SERIAL_SPEED 115200 // Suitable for most older boards (Arduino Due, etc). External FM will NOT work with this!
+// #define SERIAL_SPEED 230400 // Only works on newer boards like fast M4, M7, Teensy 3.x. External FM might work with this
+#define SERIAL_SPEED 460800	// Only works on newer boards like fast M4, M7, Teensy 3.x. External FM should work with this
+//#define SERIAL_SPEED 500000  // Used with newer boards and Armbian on AllWinner SOCs (H2, H3) that do not support 460800
 
-// Use pins to output the current mode
-// #define ARDUINO_MODE_PINS
+// Use pins to output the current mode via LEDs
+#define MODE_LEDS
 
 // For the original Arduino Due pin layout
 // #define ARDUINO_DUE_PAPA
 
 // For the ZUM V1.0 and V1.0.1 boards pin layout
-#define ARDUINO_DUE_ZUM_V10
-
-// For the SQ6POG board
-// #define STM32F1_POG
+// #define ARDUINO_DUE_ZUM_V10
 
 // For the SP8NTH board
 // #define ARDUINO_DUE_NTH
@@ -57,13 +88,42 @@
 // #define STM32F4_NUCLEO_MORPHO_HEADER
 // #define STM32F4_NUCLEO_ARDUINO_HEADER
 
-// Use separate mode pins to switch external filters/bandwidth for example
-// #define STM32F4_NUCLEO_MODE_PINS
+// Use separate mode pins to switch external channel/filters/bandwidth for example
+// #define MODE_PINS
+
+// For the VK6MST Pi3 Shield communicating over i2c. i2c address & speed defined in i2cTeensy.cpp
+// #define VK6MST_TEENSY_PI3_SHIELD_I2C
 
 // Pass RSSI information to the host
-// #define SEND_RSSI_DATA
+#define SEND_RSSI_DATA
 
 // Use the modem as a serial repeater for Nextion displays
-// #define SERIAL_REPEATER
+#define SERIAL_REPEATER
+
+// Set the baud rate of the modem serial repeater for Nextion displays
+#define SERIAL_REPEATER_BAUD_RATE 9600
+
+// Use the modem as an I2C repeater for OLED displays
+// #define I2C_REPEATER
+
+// To reduce CPU load, you can remove the DC blocker by commenting out the next line
+#define USE_DCBLOCKER
+
+// Constant Service LED once repeater is running 
+// Do not use if employing an external hardware watchdog 
+// #define CONSTANT_SRV_LED
+
+// Use the YSF and P25 LEDs for NXDN
+// #define USE_ALTERNATE_NXDN_LEDS
+
+// Use the D-Star and P25 LEDs for M17
+#define USE_ALTERNATE_M17_LEDS
+
+// Use the D-Star and DMR LEDs for POCSAG
+#define USE_ALTERNATE_POCSAG_LEDS
+
+// Use the D-Star and YSF LEDs for FM
+#define USE_ALTERNATE_FM_LEDS
 
 #endif
+

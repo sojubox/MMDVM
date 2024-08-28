@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2009-2017 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2009-2017,2020 by Jonathan Naylor G4KLX
  *   Copyright (C) 2017 by Andy Uribe CA6JAU
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -18,6 +18,9 @@
  */
 
 #include "Config.h"
+
+#if defined(MODE_DSTAR)
+
 #include "Globals.h"
 #include "DStarTX.h"
 
@@ -198,7 +201,7 @@ m_txDelay(60U)       // 100ms
 {
   ::memset(m_modState, 0x00U, 20U * sizeof(q15_t));
 
-  m_modFilter.L           = DSTAR_RADIO_BIT_LENGTH;
+  m_modFilter.L           = DSTAR_RADIO_SYMBOL_LENGTH;
   m_modFilter.phaseLength = GAUSSIAN_0_35_FILTER_PHASE_LEN;
   m_modFilter.pCoeffs     = GAUSSIAN_0_35_FILTER;
   m_modFilter.pState      = m_modState;
@@ -217,11 +220,12 @@ void CDStarTX::process()
         m_poBuffer[m_poLen++] = BIT_SYNC;
     } else {
       // Pop the type byte off
-      m_buffer.get();
+      uint8_t dummy;
+      m_buffer.get(dummy);
 
       uint8_t header[DSTAR_HEADER_LENGTH_BYTES];
       for (uint8_t i = 0U; i < DSTAR_HEADER_LENGTH_BYTES; i++)
-        header[i] = m_buffer.get();
+        m_buffer.get(header[i]);
 
       uint8_t buffer[86U];
       txHeader(header, buffer + 2U);
@@ -239,21 +243,23 @@ void CDStarTX::process()
  
   if (type == DSTAR_DATA && m_poLen == 0U) {
     // Pop the type byte off
-    m_buffer.get();
+    uint8_t dummy;
+    m_buffer.get(dummy);
 
     for (uint8_t i = 0U; i < DSTAR_DATA_LENGTH_BYTES; i++)
-      m_poBuffer[m_poLen++] = m_buffer.get();
+      m_buffer.get(m_poBuffer[m_poLen++]);
 
     m_poPtr = 0U;
   }
 
   if (type == DSTAR_EOT && m_poLen == 0U) {
     // Pop the type byte off
-    m_buffer.get();
+    uint8_t dummy;
+    m_buffer.get(dummy);
 
     for (uint8_t j = 0U; j < 3U; j++) {
-      for (uint8_t i = 0U; i < DSTAR_EOT_LENGTH_BYTES; i++)
-        m_poBuffer[m_poLen++] = DSTAR_EOT_BYTES[i];
+      for (uint8_t i = 0U; i < DSTAR_END_SYNC_LENGTH_BYTES; i++)
+        m_poBuffer[m_poLen++] = DSTAR_END_SYNC_BYTES[i];
     }
      
     m_poPtr = 0U;
@@ -262,11 +268,11 @@ void CDStarTX::process()
   if (m_poLen > 0U) {
     uint16_t space = io.getSpace();
     
-    while (space > (8U * DSTAR_RADIO_BIT_LENGTH)) {
+    while (space > (8U * DSTAR_RADIO_SYMBOL_LENGTH)) {
       uint8_t c = m_poBuffer[m_poPtr++];
       writeByte(c);
 
-      space -= 8U * DSTAR_RADIO_BIT_LENGTH;
+      space -= 8U * DSTAR_RADIO_SYMBOL_LENGTH;
       
       if (m_poPtr >= m_poLen) {
         m_poPtr = 0U;
@@ -277,7 +283,7 @@ void CDStarTX::process()
   }
 }
 
-uint8_t CDStarTX::writeHeader(const uint8_t* header, uint8_t length)
+uint8_t CDStarTX::writeHeader(const uint8_t* header, uint16_t length)
 {
   if (length != DSTAR_HEADER_LENGTH_BYTES)
     return 4U;
@@ -296,7 +302,7 @@ uint8_t CDStarTX::writeHeader(const uint8_t* header, uint8_t length)
   return 0U;
 }
 
-uint8_t CDStarTX::writeData(const uint8_t* data, uint8_t length)
+uint8_t CDStarTX::writeData(const uint8_t* data, uint16_t length)
 {
   if (length != DSTAR_DATA_LENGTH_BYTES)
     return 4U;
@@ -388,7 +394,7 @@ void CDStarTX::txHeader(const uint8_t* in, uint8_t* out) const
     if (i < 660U) {
       if (d & 0x08U)
         out[INTERLEAVE_TABLE_TX[i * 2U]] |= (0x01U << INTERLEAVE_TABLE_TX[i * 2U + 1U]);
-        i++;
+      i++;
 
       if (d & 0x04U)
         out[INTERLEAVE_TABLE_TX[i * 2U]] |= (0x01U << INTERLEAVE_TABLE_TX[i * 2U + 1U]);
@@ -412,7 +418,7 @@ void CDStarTX::txHeader(const uint8_t* in, uint8_t* out) const
 void CDStarTX::writeByte(uint8_t c)
 {
   q15_t inBuffer[8U];
-  q15_t outBuffer[DSTAR_RADIO_BIT_LENGTH * 8U];
+  q15_t outBuffer[DSTAR_RADIO_SYMBOL_LENGTH * 8U];
 
   uint8_t mask = 0x01U;
 
@@ -427,7 +433,7 @@ void CDStarTX::writeByte(uint8_t c)
 
   ::arm_fir_interpolate_q15(&m_modFilter, inBuffer, outBuffer, 8U);
   
-  io.write(STATE_DSTAR, outBuffer, DSTAR_RADIO_BIT_LENGTH * 8U);
+  io.write(STATE_DSTAR, outBuffer, DSTAR_RADIO_SYMBOL_LENGTH * 8U);
 }
 
 void CDStarTX::setTXDelay(uint8_t delay)
@@ -442,4 +448,6 @@ uint8_t CDStarTX::getSpace() const
 {
   return m_buffer.getSpace() / (DSTAR_DATA_LENGTH_BYTES + 1U);
 }
+
+#endif
 

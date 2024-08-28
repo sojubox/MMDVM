@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2015,2016 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2015,2016,2020 by Jonathan Naylor G4KLX
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -16,17 +16,20 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "Config.h"
+
+#if defined(MODE_DSTAR)
+
 #if !defined(CALDSTARTX_H)
 #define  CALDSTARTX_H
 
-#include "Config.h"
 #include "DStarDefines.h"
 
 class CCalDStarTX {
 public:
   CCalDStarTX();
 
-  uint8_t write(const uint8_t* data, uint8_t length);
+  uint8_t write(const uint8_t* data, uint16_t length);
 
   void process();
 
@@ -34,6 +37,8 @@ private:
   bool      m_transmit;
   uint16_t  m_count;
 };
+
+#endif
 
 #endif
 

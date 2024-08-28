@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2009-2017 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2009-2017,2020 by Jonathan Naylor G4KLX
  *   Copyright (C) 2016 by Colin Durbridge G4EML
  *   Copyright (C) 2017 by Andy Uribe CA6JAU
  *
@@ -19,6 +19,9 @@
  */
 
 #include "Config.h"
+
+#if defined(MODE_DMR)
+
 #include "Globals.h"
 #include "DMRSlotType.h"
 
@@ -54,6 +57,7 @@ const uint8_t BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02
 #define READ_BIT1(p,i)    (p[(i)>>3] & BIT_MASK_TABLE[(i)&7])
 
 const uint32_t STARTUP_COUNT = 20U;
+const uint32_t ABORT_COUNT = 6U;
 
 CDMRTX::CDMRTX() :
 m_fifo(),
@@ -69,6 +73,7 @@ m_poBuffer(),
 m_poLen(0U),
 m_poPtr(0U),
 m_frameCount(0U),
+m_abortCount(),
 m_abort()
 {
   ::memset(m_modState, 0x00U, 16U * sizeof(q15_t));
@@ -83,6 +88,9 @@ m_abort()
 
   m_abort[0U] = false;
   m_abort[1U] = false;
+
+  m_abortCount[0U] = 0U;
+  m_abortCount[1U] = 0U;
 }
 
 void CDMRTX::process()
@@ -139,7 +147,7 @@ void CDMRTX::process()
   }
 }
 
-uint8_t CDMRTX::writeData1(const uint8_t* data, uint8_t length)
+uint8_t CDMRTX::writeData1(const uint8_t* data, uint16_t length)
 {
   if (length != (DMR_FRAME_LENGTH_BYTES + 1U))
     return 4U;
@@ -163,7 +171,7 @@ uint8_t CDMRTX::writeData1(const uint8_t* data, uint8_t length)
   return 0U;
 }
 
-uint8_t CDMRTX::writeData2(const uint8_t* data, uint8_t length)
+uint8_t CDMRTX::writeData2(const uint8_t* data, uint16_t length)
 {
   if (length != (DMR_FRAME_LENGTH_BYTES + 1U))
     return 4U;
@@ -187,7 +195,7 @@ uint8_t CDMRTX::writeData2(const uint8_t* data, uint8_t length)
   return 0U;
 }
 
-uint8_t CDMRTX::writeShortLC(const uint8_t* data, uint8_t length)
+uint8_t CDMRTX::writeShortLC(const uint8_t* data, uint16_t length)
 {
   if (length != 9U)
     return 4U;
@@ -203,17 +211,19 @@ uint8_t CDMRTX::writeShortLC(const uint8_t* data, uint8_t length)
   return 0U;
 }
 
-uint8_t CDMRTX::writeAbort(const uint8_t* data, uint8_t length)
+uint8_t CDMRTX::writeAbort(const uint8_t* data, uint16_t length)
 {
   if (length != 1U)
     return 4U;
 
   switch (data[0U]) {
     case 1U:
+      m_abortCount[0U] = 0U;
       m_abort[0U] = true;
       return 0U;
 
     case 2U:
+      m_abortCount[1U] = 0U;
       m_abort[1U] = true;
       return 0U;
 
@@ -227,6 +237,8 @@ void CDMRTX::setStart(bool start)
   m_state = start ? DMRTXSTATE_SLOT1 : DMRTXSTATE_IDLE;
 
   m_frameCount = 0U;
+  m_abortCount[0U] = 0U;
+  m_abortCount[1U] = 0U;
 
   m_abort[0U] = false;
   m_abort[1U] = false;
@@ -282,9 +294,9 @@ uint8_t CDMRTX::getSpace2() const
 
 void CDMRTX::createData(uint8_t slotIndex)
 {
-  if (m_fifo[slotIndex].getData() > 0U && m_frameCount >= STARTUP_COUNT) {
+  if (m_fifo[slotIndex].getData() >= DMR_FRAME_LENGTH_BYTES && m_frameCount >= STARTUP_COUNT && m_abortCount[slotIndex] >= ABORT_COUNT) {
     for (unsigned int i = 0U; i < DMR_FRAME_LENGTH_BYTES; i++) {
-      m_poBuffer[i]   = m_fifo[slotIndex].get();
+      m_fifo[slotIndex].get(m_poBuffer[i]);
       m_markBuffer[i] = MARK_NONE;
     }
   } else {
@@ -302,18 +314,41 @@ void CDMRTX::createData(uint8_t slotIndex)
 
 void CDMRTX::createCal()
 {
-  for (unsigned int i = 0U; i < DMR_FRAME_LENGTH_BYTES; i++) {
-    m_poBuffer[i]   = 0x5FU;              // +3, +3, -3, -3 pattern for deviation cal.
-    m_markBuffer[i] = MARK_NONE;
+  // 1.2 kHz sine wave generation
+  if (m_modemState == STATE_DMRCAL) {
+    for (unsigned int i = 0U; i < DMR_FRAME_LENGTH_BYTES; i++) {
+      m_poBuffer[i]   = 0x5FU;              // +3, +3, -3, -3 pattern for deviation cal.
+      m_markBuffer[i] = MARK_NONE;
+    }
+
+    m_poLen = DMR_FRAME_LENGTH_BYTES;
   }
 
-  m_poLen = DMR_FRAME_LENGTH_BYTES;
+  // 80 Hz square wave generation
+  if (m_modemState == STATE_LFCAL) {
+    for (unsigned int i = 0U; i < 7U; i++) {
+      m_poBuffer[i]   = 0x55U;              // +3, +3, ... pattern
+      m_markBuffer[i] = MARK_NONE;
+    }
+
+    m_poBuffer[7U]   = 0x5FU;               // +3, +3, -3, -3 pattern
+
+    for (unsigned int i = 8U; i < 15U; i++) {
+      m_poBuffer[i]   = 0xFFU;              // -3, -3, ... pattern
+      m_markBuffer[i] = MARK_NONE;
+    }
+
+    m_poLen = 15U;
+  }
+
   m_poPtr = 0U;
 }
 
 void CDMRTX::createCACH(uint8_t txSlotIndex, uint8_t rxSlotIndex)
 {
   m_frameCount++;
+  m_abortCount[0U]++;
+  m_abortCount[1U]++;
 
   if (m_cachPtr >= 12U)
     m_cachPtr = 0U;
@@ -367,4 +402,21 @@ void CDMRTX::setColorCode(uint8_t colorCode)
   CDMRSlotType slotType;
   slotType.encode(colorCode, DT_IDLE, m_idle);
 }
+
+void CDMRTX::resetFifo1()
+{
+  m_fifo[0U].reset();
+}
+
+void CDMRTX::resetFifo2()
+{
+  m_fifo[1U].reset();
+}
+
+uint32_t CDMRTX::getFrameCount()
+{
+  return m_frameCount;
+}
+
+#endif
 

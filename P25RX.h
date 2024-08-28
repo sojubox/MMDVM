@@ -1,5 +1,6 @@
 /*
- *   Copyright (C) 2015,2016,2017 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2015,2016,2017,2020 by Jonathan Naylor G4KLX
+ *   Copyright (C) 2018 by Bryan Biedenkapp <gatekeep@gmail.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -16,10 +17,13 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "Config.h"
+
+#if defined(MODE_P25)
+
 #if !defined(P25RX_H)
 #define  P25RX_H
 
-#include "Config.h"
 #include "P25Defines.h"
 
 enum P25RX_STATE {
@@ -59,6 +63,7 @@ private:
   uint8_t     m_averagePtr;
   uint32_t    m_rssiAccum;
   uint16_t    m_rssiCount;
+  uint8_t     m_duid;
 
   void processNone(q15_t sample);
   void processHdr(q15_t sample);
@@ -70,3 +75,6 @@ private:
 };
 
 #endif
+
+#endif
+
